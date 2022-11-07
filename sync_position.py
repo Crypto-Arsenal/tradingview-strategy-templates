@@ -17,9 +17,9 @@ class Strategy(StrategyBase):
         signal_action = signal.get('action')
         log = signal.get('log')
 
-        CA.log('multichart log: ' + str(log))
+        CA.log('TradingView log: ' + str(log))
 
-        items = log.split(",") # comment, market_position, market_position_size
+        items = log.split("/") # comment, market_position, market_position_size
 
         if len(items) > 2:
             self.newPositionSize = items[2]
