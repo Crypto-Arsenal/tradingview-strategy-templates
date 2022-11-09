@@ -36,6 +36,7 @@ class Strategy(StrategyBase):
             return
 
         self.newPositionSize = float(self.newPositionSize.strip()) * self.ORDER_PORTION
+        self.prevPositionSize = float(self.prevPositionSize.strip()) * self.ORDER_PORTION
 
         if self.newPositionSide ==  "long":
             self.newPositionSize = abs(self.newPositionSize)
@@ -51,19 +52,21 @@ class Strategy(StrategyBase):
         Set Current Position
         """
 
-        # start bot only if we have a 0 signal
-        if self.curTotalPositionSize is None and self.newPositionSize != 0:
-            CA.log("current Position is not 0; will start position once at 0")
-            return
-
         # will be current position
         self.curTotalPositionSize = self.get_total_position()
-
-        CA.log("curTotalPosition " + str(self.curTotalPositionSize))
 
         if self.curTotalPositionSize is None:
             CA.log("cannot get current total position")
             return
+
+        # will be current position
+        CA.log("current Total Position " + str(self.curTotalPositionSize))
+
+        # start bot only if we were at 0 signal
+        if self.curTotalPositionSize == 0 and self.prevPositionSize != 0:
+            CA.log("prev Position is not 0; will wait and start position once we are at 0")
+            return
+
 
         if self.curTotalPositionSize == self.newPositionSize:
             CA.log("Position already synced")
