@@ -19,9 +19,11 @@ class Strategy(StrategyBase):
 
         CA.log('TradingView log: ' + str(log))
 
-        items = log.split("/") # comment, market_position, market_position_size
+        items = log.split("/") # comment/market_position/market_position_size
 
-        if len(items) > 2:
+        if items and len(items) > 4:
+            self.prevPositionSize = items[4]
+            self.prevPositionSide = items[3]
             self.newPositionSize = items[2]
             self.newPositionSide = items[1] # market_position: long, short, flat
 
@@ -33,7 +35,7 @@ class Strategy(StrategyBase):
             CA.log("failed to parse position from log " + log)
             return
 
-        self.newPositionSize = int(self.newPositionSize.strip()) * self.ORDER_PORTION
+        self.newPositionSize = float(self.newPositionSize.strip()) * self.ORDER_PORTION
 
         if self.newPositionSide ==  "long":
             self.newPositionSize = abs(self.newPositionSize)
@@ -45,18 +47,26 @@ class Strategy(StrategyBase):
             CA.log("failed to parse position from log: expect long, short, or flat " + log)
             return
 
+        """
+        Set Current Position
+        """
+
         # start bot only if we have a 0 signal
         if self.curTotalPositionSize is None and self.newPositionSize != 0:
             CA.log("current Position is not 0; will start position once at 0")
             return
 
-        """
-        Set Current Position
-        """
         # will be current position
         self.curTotalPositionSize = self.get_total_position()
 
+        CA.log("curTotalPosition " + str(self.curTotalPositionSize))
+
+        if self.curTotalPositionSize is None:
+            CA.log("cannot get current total position")
+            return
+
         if self.curTotalPositionSize == self.newPositionSize:
+            CA.log("Position already synced")
             return
 
         if self.curTotalPositionSize > self.newPositionSize:
@@ -116,6 +126,7 @@ class Strategy(StrategyBase):
         curTotalPositionSize = None
         total_long_position_size = None
         total_short_position_size = None
+
         long_position = CA.get_position(exchange, pair, CA.PositionSide.LONG)
         if long_position:
             total_long_position_size = long_position.total_size
