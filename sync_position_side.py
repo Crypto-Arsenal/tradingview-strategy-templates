@@ -34,17 +34,17 @@ class Strategy(StrategyBase):
 
         # Entry Long
         if self.newTVPositionSide == "long":
-            if self.curCAPositionSide == "short": # long -> short
+            if self.curCAPositionSide == "short": #  lhort -> long
                 CA.place_order(exchange, pair, action='close_short', conditional_order_type='OTO', percent=100,
                                    child_conditional_orders=[{'action': 'open_long',  'percent': 100}])
-            elif self.curCAPositionSide == "flat":  # long -> flat
+            elif self.curCAPositionSide == "flat":  # flat -> long
                 CA.place_order(exchange, pair, action='open_long', percent=100)
         # Entry Short
         elif self.newTVPositionSide == "short":
-            if self.curCAPositionSide == "long": # short -> long
+            if self.curCAPositionSide == "long": #  long -> short
                     CA.place_order(exchange, pair, action='close_long', conditional_order_type='OTO', percent=100,
                                    child_conditional_orders=[{'action': 'open_short',  'percent': 100}])
-            elif self.curCAPositionSide == "flat":  # short -> flat
+            elif self.curCAPositionSide == "flat":  #  flat -> short
                 CA.place_order(exchange, pair, action='open_short', percent=100)
         # No position
         elif self.newTVPositionSide == "flat":
