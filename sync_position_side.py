@@ -10,15 +10,13 @@ class Strategy(StrategyBase):
         """
         Calculate New Position
         """
-        self.newPositionSize = None
-
         log = signal.get('log')
 
         CA.log('📩 TradingView log: ' + str(log))
 
         items = log.split("/")  # comment/market_position/market_position_size
 
-        if items and len(items) >= 2:
+        if items and len(items) >= 3:
             self.prevTVPositionSide = items[2]
             self.newTVPositionSide = items[1]  # market_position: long, short, flat
         else:
