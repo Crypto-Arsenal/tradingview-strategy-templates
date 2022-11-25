@@ -48,9 +48,9 @@ class Strategy(StrategyBase):
                 CA.place_order(exchange, pair, action='open_short', percent=100)
         # No position
         elif self.newTVPositionSide == "flat":
-            if self.curCAPositionSide == "short":
+            if self.curCAPositionSide == "short":  # flat -> short
                 CA.place_order(exchange, pair, action='close_short', percent=100)
-            elif self.curCAPositionSide == "long":
+            elif self.curCAPositionSide == "long":  # flat -> long
                 CA.place_order(exchange, pair, action='close_long', percent=100)
         else:
             CA.log("⛔ No action")
