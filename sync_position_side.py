@@ -6,16 +6,11 @@ class Strategy(StrategyBase):
 
     def on_tradingview_signal(self, signal, candles):
         exchange, pair, base, quote = CA.get_exchange_pair()
-
-        """
-        Calculate New Position
-        """
         log = signal.get('log')
 
         CA.log('📩 TradingView log: ' + str(log))
 
         items = log.split("/")  # comment/market_position/market_position_size
-
         if items and len(items) >= 3:
             self.prevTVPositionSide = items[2]
             self.newTVPositionSide = items[1]  # market_position: long, short, flat
@@ -52,7 +47,6 @@ class Strategy(StrategyBase):
                 CA.place_order(exchange, pair, action='close_long', percent=100)
         else:
             CA.log("⛔ No action")
-            return
 
     def trade(self, candles):
         pass
