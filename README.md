@@ -1,5 +1,12 @@
 # tradingview-templates
 
+## Sync position side
+如果你的策略是全倉所以他會去同步你 TＶ 策略傳來的倉位方向 
+---
+像是  TV 傳 long 我們就會開多 100% 
+在傳 flat 我們就會平倉
+在傳 short 我們就會開空 100%
+
 ## sync position
 - Will sync TV strategy position
 
