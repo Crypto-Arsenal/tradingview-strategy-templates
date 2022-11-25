@@ -67,25 +67,12 @@ class Strategy(StrategyBase):
     def get_total_position_size_and_side(self):
         exchange, pair, base, quote = CA.get_exchange_pair()
 
-        curTotalPositionSize = None
-        total_long_position_size = None
-        total_short_position_size = None
-
         long_position = CA.get_position(exchange, pair, CA.PositionSide.LONG)
         if long_position:
-            total_long_position_size = long_position.total_size
+            return (abs(long_position.total_size), 'long')
 
         short_position = CA.get_position(exchange, pair, CA.PositionSide.SHORT)
         if short_position:
-            total_short_position_size = short_position.total_size
+            return (-1 * abs(short_position.total_size), 'short')
 
-        if total_long_position_size is None and total_short_position_size is None:
-            curTotalPositionSize = (0, 'flat')
-
-        if total_long_position_size is not None:
-            curTotalPositionSize = (abs(total_long_position_size), 'long')
-
-        if total_short_position_size is not None:
-            curTotalPositionSize = (-1 * abs(total_short_position_size), 'short')
-
-        return curTotalPositionSize
+        return  (0, 'flat')
