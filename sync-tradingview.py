@@ -16,6 +16,8 @@ class Strategy(StrategyBase):
 
         """
         {
+            "connectorName":"name",
+            "connectorToken":"token",
             "log": "{{strategy.order.comment}}", 
             "position": {
                 "capital": 100,
@@ -25,9 +27,7 @@ class Strategy(StrategyBase):
                 "position_size": {{strategy.market_position_size}},
                 "prev_position": "{{strategy.prev_market_position}}",
                 "prev_position_size": {{strategy.prev_market_position_size}}
-            },
-            "connectorName":"name",
-            "connectorToken":"token"
+            }
         }
         """
 
