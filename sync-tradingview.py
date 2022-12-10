@@ -54,7 +54,7 @@ class Strategy(StrategyBase):
          - 如果 new > prev 那ＴＶ在加倉或是開倉 
          - 用 tv_capital 算出 要開 compound_capital 的幾 % 
         """
-        if abs(tv_position - tv_prev_position) > abs(tv_prev_position):
+        if (abs(tv_position) > abs(tv_prev_position) and tv_position * tv_prev_position >= 0) or tv_position * tv_prev_position < 0  :
 
             # close short -> open long (一個正 一個反) 有一些order數量是反轉時要關艙的 所以要拿掉
             if tv_position * tv_prev_position < 0: # 代表倉位方向不一樣
