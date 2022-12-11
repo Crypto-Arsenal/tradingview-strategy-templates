@@ -15,14 +15,26 @@ class Strategy(StrategyBase):
         CA.log('📩 TradingView log: ' + str(log))
 
         """
+        "entryOrder mode": 每次開單的設定
+        1. "availableBalancePercent" 用可用資金去下%
+        2. "totalBalancePercent" 用空倉時的資金固定去下%
+        3. "fixedTotalBalance" 用固定初始本金去下 需要 size and price
+        ex. "entryOrder": {
+                "value": 100,
+                "mode": "fixedTotalBalance",
+                "size": {{strategy.order.contracts}},
+                "price": {{strategy.order.price}},
+            }
+        ===   
         {
             "connectorName":"name",
             "connectorToken":"token",
             "log": "{{strategy.order.comment}}", 
+            "entryOrder": {
+                "value": 100,
+                "mode": "availableBalancePercent",
+            },
             "position": {
-                "capital": 100,
-                "order_size": {{strategy.order.contracts}},
-                "order_price": {{strategy.order.price}},
                 "position": "{{strategy.market_position}}", 
                 "position_size": {{strategy.market_position_size}},
                 "prev_position": "{{strategy.prev_market_position}}",
@@ -32,14 +44,18 @@ class Strategy(StrategyBase):
         """
 
         position = signal.get('position')
-        if not position:
+        entryOrder = signal.get('entryOrder')
+        if not position or not entryOrder:
             return CA.log('⛔ Invalid signal')
 
-        tv_capital = position.get("capital")
+        tv_order_mode = entryOrder.get("mode") # availableBalancePercent, totalBalancePercent, fixedTotalBalance
+        tv_order_value = entryOrder.get("value")
+        tv_order_size = entryOrder.get("size")
+        tv_order_price = entryOrder.get("price")
+        
         tv_position = self.get_position_from_size_and_side(position.get("position_size"), position.get("position"))
         tv_prev_position = self.get_position_from_size_and_side(position.get("prev_position_size"), position.get("prev_position"))
-        tv_order_size = position.get("order_size")
-        tv_order_price = position.get("order_price")
+
 
         # 檢查訊號正確性
         if tv_capital is None or tv_position is None or tv_prev_position is None or tv_order_size is None or tv_order_price is None:
@@ -51,33 +67,28 @@ class Strategy(StrategyBase):
 
 
         """
-         - 如果 new > prev 那ＴＶ在加倉或是開倉 
+         - 如果反向開單或是加倉
          - 用 tv_capital 算出 要開 compound_capital 的幾 % 
         """
-        if (abs(tv_position) > abs(tv_prev_position) and tv_position * tv_prev_position >= 0) or tv_position * tv_prev_position < 0  :
-
-            # close short -> open long (一個正 一個反) 有一些order數量是反轉時要關艙的 所以要拿掉
-            if tv_position * tv_prev_position < 0: # 代表倉位方向不一樣
-                tv_order_size = tv_order_size - abs(tv_prev_position) # 其實就是 tv_position
-
-            # 用下單金額和權益去反推TV下單%
-            tv_order_percent_of_capitial = (tv_order_size * tv_order_price) / tv_capital
-
-            # # 看我們現在的倉位是用多少%的本金下去開的 如果2顆是用10%開的->1顆是5%->那現在倉位是3代表我們TV用了15%去開倉了
-            # # tv_position could be negative
-            # tv_position_percent_of_capital = (abs(tv_position) / tv_order_size) * tv_order_percent_of_capitial
-            # CA.log("TV的倉位 % " + str(tv_position_percent_of_capital * 100))
-
-            # # 看CA的倉位已經用了多少%的本金去開了
-            # ca_position_percent_of_capital = (self.ca_initial_capital - ca_available_capital) / self.ca_initial_capital
-            
-            # CA.log("CA現在的倉位% " + str(ca_position_percent_of_capital * 100))
-
-            # # 看CA的倉位%跟TV還差多少 （我們要開多少%的倉位)
-            # tv_position_percent_of_capital = tv_position_percent_of_capital - ca_position_percent_of_capital
+        if (abs(tv_position) > abs(tv_prev_position) and tv_position * tv_prev_position >= 0) or tv_position * tv_prev_position < 0:
+            ca_order_captial = ca_available_capital
+            if tv_order_mode == "availableBalancePercent":
+                ca_order_captial = ca_available_capital
+                tv_order_percent_of_capitial = tv_order_value
+            elif tv_order_mode == "totalBalancePercent":
+                ca_order_captial = self.ca_initial_capital
+                tv_order_percent_of_capitial = tv_order_value
+            elif tv_order_mode == "fixedTotalBalance":
+                # close short -> open long (一個正 一個反) 有一些order數量是反轉時要關艙的 所以要拿掉
+                if tv_position * tv_prev_position < 0: # 代表倉位方向不一樣
+                    tv_order_size = tv_order_size - abs(tv_prev_position) # 其實就是 tv_position
+                # 用下單金額和權益去反推TV下單% tv_order_value 是我們的固定本金
+                tv_order_percent_of_capitial = (tv_order_size * tv_order_price) / tv_order_value
+            else:
+                CA.log("Invalid tv_order_mode" + str(tv_order_mode))
 
             # 用CA空倉時的金額去下開或加倉的金額 不行超過 1
-            notional = self.ca_initial_capital * min(tv_order_percent_of_capitial, 1)
+            notional = ca_order_captial * tv_order_percent_of_capitial * self['leverage'] # default to 1
             
             CA.log("CA開倉比例% " + str(tv_order_percent_of_capitial * 100) + " \n CA下單金額$ " + str(notional) +  " \n CA入場本金$: " + str(self.ca_initial_capital)  + " \n CA可用資金$: " + str(ca_available_capital))
 
