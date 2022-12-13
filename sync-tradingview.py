@@ -88,7 +88,7 @@ class Strategy(StrategyBase):
                 CA.log("Invalid tv_order_mode" + str(tv_order_mode))
 
             # 用CA空倉時的金額去下開或加倉的金額 不行超過 1
-            notional = ca_order_captial * tv_order_percent_of_capitial * self['leverage'] # default to 1
+            notional = ca_order_captial * tv_order_percent_of_capitial * CA.get_leverage() # default to 1
             
             CA.log("CA開倉比例% " + str(tv_order_percent_of_capitial * 100) + " \n CA下單金額$ " + str(notional) +  " \n CA入場本金$: " + str(self.ca_initial_capital)  + " \n CA可用資金$: " + str(ca_available_capital))
 
