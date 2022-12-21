@@ -53,12 +53,12 @@ class Strategy(StrategyBase):
         tv_order_size = entryOrder.get("size")
         tv_order_price = entryOrder.get("price")
         
-        tv_position = self.get_position_from_size_and_side(position.get("position_size"), position.get("position"))
-        tv_prev_position = self.get_position_from_size_and_side(position.get("prev_position_size"), position.get("prev_position"))
+        tv_position = self.get_position_from_size_and_side(position.get("size"), position.get("side"))
+        tv_prev_position = self.get_position_from_size_and_side(position.get("prev_size"), position.get("prev_side"))
 
 
         # 檢查訊號正確性
-        if tv_capital is None or tv_position is None or tv_prev_position is None or tv_order_size is None or tv_order_price is None:
+        if tv_order_mode is None or tv_position is None or tv_prev_position is None:
             return CA.log('⛔ Invalid signal')
 
         ca_position = self.get_ca_position()
@@ -73,11 +73,11 @@ class Strategy(StrategyBase):
         if (abs(tv_position) > abs(tv_prev_position) and tv_position * tv_prev_position >= 0) or tv_position * tv_prev_position < 0:
             ca_order_captial = ca_available_capital
             if tv_order_mode == "availableBalancePercent":
-                ca_order_captial = ca_available_capital
+                ca_order_captial = None
                 tv_order_percent_of_capitial = tv_order_value
             elif tv_order_mode == "totalBalancePercent":
                 ca_order_captial = self.ca_initial_capital
-                tv_order_percent_of_capitial = tv_order_value
+                tv_order_percent_of_capitial = tv_order_value / 100
             elif tv_order_mode == "fixedTotalBalance":
                 # close short -> open long (一個正 一個反) 有一些order數量是反轉時要關艙的 所以要拿掉
                 if tv_position * tv_prev_position < 0: # 代表倉位方向不一樣
@@ -86,27 +86,31 @@ class Strategy(StrategyBase):
                 tv_order_percent_of_capitial = (tv_order_size * tv_order_price) / tv_order_value
             else:
                 CA.log("Invalid tv_order_mode" + str(tv_order_mode))
-
-            # 用CA空倉時的金額去下開或加倉的金額 不行超過 1
-            notional = ca_order_captial * tv_order_percent_of_capitial * CA.get_leverage() # default to 1
             
-            CA.log("CA開倉比例% " + str(tv_order_percent_of_capitial * 100) + " \n CA下單金額$ " + str(notional) +  " \n CA入場本金$: " + str(self.ca_initial_capital)  + " \n CA可用資金$: " + str(ca_available_capital))
+            if  ca_order_captial is None:  # availableBalancePercent
+                newOrderAmount = dict(percent=tv_order_percent_of_capitial * CA.get_leverage())   # default to 1
+                CA.log("CA開倉比例% " + str(tv_order_percent_of_capitial) + " \n CA下單金額%" + str(tv_order_percent_of_capitial) +  " \n CA入場本金$: " + str(self.ca_initial_capital)  + " \n CA可用資金$: " + str(ca_available_capital))
+            else:
+                # 用CA空倉時的金額去下開或加倉的金額
+                notional = ca_order_captial * tv_order_percent_of_capitial * CA.get_leverage() # default to 1
+                newOrderAmount = dict(notional = notional)   
+                CA.log("CA開倉比例% " + str(tv_order_percent_of_capitial * 100) + " \n CA下單金額$ " + str(notional) +  " \n CA入場本金$: " + str(self.ca_initial_capital)  + " \n CA可用資金$: " + str(ca_available_capital))
 
             # close short -> open long 不用管 prev_tv_position 因為我們知道一定會開多 但是要先確保 CA 倉位是對的
             if tv_position > 0 and ca_position < 0:
                 CA.log("先全關空倉在開多")
                 return CA.place_order(exchange, pair, action='close_short', conditional_order_type='OTO', percent=100,
-                                   child_conditional_orders=[{'action': 'open_long',  'notional': notional}])
+                                   child_conditional_orders=[{'action': 'open_long',  **newOrderAmount}])
 
             # close long -> open short 不用管 prev_tv_position 因為我們知道一定會開空 但是要先確保 CA 倉位是對的
             elif tv_position < 0 and ca_position > 0:
                 CA.log("先全關多倉在開空")
                 return CA.place_order(exchange, pair, action='close_long', conditional_order_type='OTO', percent=100,
-                                   child_conditional_orders=[{'action': 'open_short',  'notional': notional}])
+                                   child_conditional_orders=[{'action': 'open_short', **newOrderAmount}])
 
             # CA 倉位是在對的方向
             action = "open_long" if tv_position > 0 else "open_short"
-            return CA.place_order(exchange, pair, action=action, notional=notional)
+            return CA.place_order(exchange, pair, action=action, **newOrderAmount)
         # 照比例關艙區
         else: 
             # 沒有倉位不用關
