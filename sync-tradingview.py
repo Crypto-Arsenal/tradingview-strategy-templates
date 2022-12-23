@@ -16,9 +16,10 @@ class Strategy(StrategyBase):
 
         """
         "entryOrder mode": 每次開單的設定
-        1. "availableBalancePercent" 用可用資金去下%
-        2. "totalBalancePercent" 用空倉時的資金固定去下%
-        3. "fixedTotalBalance" 用固定初始本金去下 需要 size and price
+        1. "compoundAvailableBalancePercent" 用復利可用資金去下%
+        2. "noCompoundAvailableBalancePercent" 用單利去下%
+        3. "totalBalancePercent" 用空倉時的資金固定去下%
+        4. "fixedTotalBalance" 用固定初始本金去下 需要 size and price
         ex. "entryOrder": {
                 "value": 100,
                 "mode": "fixedTotalBalance",
@@ -76,11 +77,11 @@ class Strategy(StrategyBase):
         if (abs(tv_position) > abs(tv_prev_position) and tv_position * tv_prev_position >= 0) or tv_position * tv_prev_position < 0:
             ca_order_captial = ca_available_capital
             # PPC  複利
-            if tv_order_mode == "availableBalancePercent":
+            if tv_order_mode == "compoundAvailableBalancePercent":
                 ca_order_captial = None
                 tv_order_percent_of_capitial = tv_order_value
             # 單利
-            elif tv_order_mode == "fixedBalancePercent":
+            elif tv_order_mode == "noCompoundAvailableBalancePercent":
                 ca_order_captial = None
                 diff = ca_available_capital - self.ca_initial_capital
                 tv_order_percent_of_capitial = tv_order_value
