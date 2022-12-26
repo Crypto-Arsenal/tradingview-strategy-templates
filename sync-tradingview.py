@@ -33,7 +33,7 @@ class Strategy(StrategyBase):
    "log":"short",
    "entryOrder":{
       "value":100,
-      "mode":"availableBalancePercent"
+      "mode":"compoundAvailableBalancePercent"
    },
    "position":{
       "side":"{{strategy.market_position}}",
