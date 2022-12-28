@@ -106,12 +106,12 @@ class Strategy(StrategyBase):
             
             if  ca_order_captial is None:  # availableBalancePercent
                 newOrderAmount = dict(percent=tv_order_percent_of_capitial * int(CA.get_leverage()))   # default to 1
-                CA.log("CA開倉比例% " + str(tv_order_percent_of_capitial) + " \n CA下單金額%" + str(tv_order_percent_of_capitial) +  " \n CA入場本金$: " + str(self.ca_total_capital)  + " \n CA可用資金$: " + str(ca_available_capital))
+                CA.log("CA開倉比例% " + str(tv_order_percent_of_capitial * int(CA.get_leverage())) + " \n CA下單金額%" + str(tv_order_percent_of_capitial * int(CA.get_leverage())) +  " \n CA入場本金$: " + str(self.ca_total_capital)  + " \n CA可用資金$: " + str(ca_available_capital))
             else:
                 # 用CA空倉時的金額去下開或加倉的金額
                 notional = ca_order_captial * tv_order_percent_of_capitial * int(CA.get_leverage()) # default to 1
                 newOrderAmount = dict(notional = notional)   
-                CA.log("CA開倉比例% " + str(tv_order_percent_of_capitial * 100) + " \n CA下單金額$ " + str(notional) +  " \n CA入場本金$: " + str(self.ca_total_capital)  + " \n CA可用資金$: " + str(ca_available_capital))
+                CA.log("CA開倉比例% " + str(tv_order_percent_of_capitial * 100 * int(CA.get_leverage())) + " \n CA下單金額$ " + str(notional) +  " \n CA入場本金$: " + str(self.ca_total_capital)  + " \n CA可用資金$: " + str(ca_available_capital))
 
             # close short -> open long 不用管 prev_tv_position 因為我們知道一定會開多 但是要先確保 CA 倉位是對的
             if tv_position > 0 and ca_position < 0:
@@ -166,7 +166,7 @@ class Strategy(StrategyBase):
         if order.status == CA.OrderStatus.FILLED:
             # 看CA的倉位已經用了多少%的本金去開了
             ca_position_percent_of_capital = (self.ca_total_capital - ca_available_capital) / self.ca_total_capital
-            CA.log("🎉 現在CA倉位數量: " + str(ca_position) + " 本金%: " + str(ca_position_percent_of_capital * 100) + " \n CA入場本金$: " + str(self.ca_total_capital)  + " \n CA可用資金$: " + str(ca_available_capital))
+            CA.log("🎉 現在CA倉位數量: " + str(ca_position) + " 本金%: " + str(ca_position_percent_of_capital * 100 *  int(CA.get_leverage()))+ " \n CA入場本金$: " + str(self.ca_total_capital)  + " \n CA可用資金$: " + str(ca_available_capital))
             
       # 平倉時 設置新的開倉金
         if ca_position == 0:
