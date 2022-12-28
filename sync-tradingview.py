@@ -105,11 +105,11 @@ class Strategy(StrategyBase):
                 CA.log("⛔ Invalid tv_order_mode" + str(tv_order_mode))
             
             if  ca_order_captial is None:  # availableBalancePercent
-                newOrderAmount = dict(percent=tv_order_percent_of_capitial * CA.get_leverage())   # default to 1
+                newOrderAmount = dict(percent=tv_order_percent_of_capitial * int(CA.get_leverage()))   # default to 1
                 CA.log("CA開倉比例% " + str(tv_order_percent_of_capitial) + " \n CA下單金額%" + str(tv_order_percent_of_capitial) +  " \n CA入場本金$: " + str(self.ca_total_capital)  + " \n CA可用資金$: " + str(ca_available_capital))
             else:
                 # 用CA空倉時的金額去下開或加倉的金額
-                notional = ca_order_captial * tv_order_percent_of_capitial * CA.get_leverage() # default to 1
+                notional = ca_order_captial * tv_order_percent_of_capitial * int(CA.get_leverage()) # default to 1
                 newOrderAmount = dict(notional = notional)   
                 CA.log("CA開倉比例% " + str(tv_order_percent_of_capitial * 100) + " \n CA下單金額$ " + str(notional) +  " \n CA入場本金$: " + str(self.ca_total_capital)  + " \n CA可用資金$: " + str(ca_available_capital))
 
@@ -197,3 +197,4 @@ class Strategy(StrategyBase):
             return -1 * abs(short_position.total_size)
 
         return  0
+    
