@@ -80,6 +80,9 @@ class Strategy(StrategyBase):
             if tv_order_mode == "compoundAvailableBalancePercent":
                 ca_order_captial = None
                 tv_order_percent_of_capitial = tv_order_value
+                
+                newOrderAmount = dict(percent=tv_order_percent_of_capitial * int(CA.get_leverage()))   # default to 1
+                CA.log("CA開倉比例% " + str(tv_order_percent_of_capitial * int(CA.get_leverage())) + " \n CA下單金額%" + str(tv_order_percent_of_capitial * int(CA.get_leverage())) +  " \n CA入場本金$: " + str(self.ca_total_capital)  + " \n CA可用資金$: " + str(ca_available_capital))
             # 單利
             elif tv_order_mode == "noCompoundAvailableBalancePercent":
                 ca_order_captial = None
@@ -90,10 +93,25 @@ class Strategy(StrategyBase):
                     # 算多賺的是幾％
                     offset_percent = (ca_available_capital / diff) * 100
                     tv_order_percent_of_capitial = tv_order_value - offset_percent
+                newOrderAmount = dict(percent=tv_order_percent_of_capitial * int(CA.get_leverage()))   # default to 1
+                CA.log("CA開倉比例% " + str(tv_order_percent_of_capitial * int(CA.get_leverage())) + " \n CA下單金額%" + str(tv_order_percent_of_capitial * int(CA.get_leverage())) +  " \n CA入場本金$: " + str(self.ca_total_capital)  + " \n CA可用資金$: " + str(ca_available_capital))
+            # 下固定金額
+            elif tv_order_mode == "noCompoundAvailableBalanceNotional":
+                ca_order_captial = tv_order_value
+                # 不夠開
+                if ca_available_capital < tv_order_value: 
+                    ca_order_captial = ca_available_capital
+                notional = ca_order_captial * int(CA.get_leverage()) # default to 1
+                newOrderAmount = dict(notional = notional)   
+                CA.log( " \n CA下單金額$ " + str(notional) + " \n CA可用資金$: " + str(ca_available_capital))
             # PPC  複利 加倉
             elif tv_order_mode == "totalBalancePercent":
                 ca_order_captial = self.ca_total_capital
                 tv_order_percent_of_capitial = tv_order_value / 100
+                 # 用CA空倉時的金額去下開或加倉的金額
+                notional = ca_order_captial * tv_order_percent_of_capitial * int(CA.get_leverage()) # default to 1
+                newOrderAmount = dict(notional = notional)   
+                CA.log("CA開倉比例% " + str(tv_order_percent_of_capitial * 100 * int(CA.get_leverage())) + " \n CA下單金額$ " + str(notional) +  " \n CA入場本金$: " + str(self.ca_total_capital)  + " \n CA可用資金$: " + str(ca_available_capital))
             elif tv_order_mode == "fixedTotalBalance":
                 ca_order_captial = self.ca_total_capital
                 # close short -> open long (一個正 一個反) 有一些order數量是反轉時要關艙的 所以要拿掉
@@ -101,18 +119,13 @@ class Strategy(StrategyBase):
                     tv_order_size = tv_order_size - abs(tv_prev_position) # 其實就是 tv_position
                 # 用下單金額和權益去反推TV下單% tv_order_value 是我們的固定本金
                 tv_order_percent_of_capitial = (tv_order_size * tv_order_price) / tv_order_value
-            else:
-                CA.log("⛔ Invalid tv_order_mode" + str(tv_order_mode))
-            
-            if  ca_order_captial is None:  # availableBalancePercent
-                newOrderAmount = dict(percent=tv_order_percent_of_capitial * int(CA.get_leverage()))   # default to 1
-                CA.log("CA開倉比例% " + str(tv_order_percent_of_capitial * int(CA.get_leverage())) + " \n CA下單金額%" + str(tv_order_percent_of_capitial * int(CA.get_leverage())) +  " \n CA入場本金$: " + str(self.ca_total_capital)  + " \n CA可用資金$: " + str(ca_available_capital))
-            else:
-                # 用CA空倉時的金額去下開或加倉的金額
+                 # 用CA空倉時的金額去下開或加倉的金額
                 notional = ca_order_captial * tv_order_percent_of_capitial * int(CA.get_leverage()) # default to 1
                 newOrderAmount = dict(notional = notional)   
                 CA.log("CA開倉比例% " + str(tv_order_percent_of_capitial * 100 * int(CA.get_leverage())) + " \n CA下單金額$ " + str(notional) +  " \n CA入場本金$: " + str(self.ca_total_capital)  + " \n CA可用資金$: " + str(ca_available_capital))
-
+            else:
+                return CA.log("⛔ Invalid tv_order_mode" + str(tv_order_mode))
+            
             # close short -> open long 不用管 prev_tv_position 因為我們知道一定會開多 但是要先確保 CA 倉位是對的
             if tv_position > 0 and ca_position < 0:
                 CA.log("先全關空倉在開多")
