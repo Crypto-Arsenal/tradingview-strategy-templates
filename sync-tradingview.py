@@ -47,7 +47,7 @@ class Strategy(StrategyBase):
         position = signal.get('position')
         entryOrder = signal.get('entryOrder')
         if not position or not entryOrder:
-            return CA.log('⛔ Invalid signal')
+            return CA.log('⛔ Invalid signal,  missing position or entryOrder')
 
         tv_order_mode = entryOrder.get("mode") # availableBalancePercent, totalBalancePercent, fixedTotalBalance
         tv_order_value = entryOrder.get("value")
@@ -60,7 +60,7 @@ class Strategy(StrategyBase):
 
         # 檢查訊號正確性
         if tv_order_mode is None or tv_position is None:
-            return CA.log('⛔ Invalid signal')
+            return CA.log('⛔ Invalid signal, missing tv_order_mode or tv_position')
 
         ca_position = self.get_ca_position()
         quote_balance = CA.get_balance(exchange, quote)
@@ -91,10 +91,10 @@ class Strategy(StrategyBase):
                 # 賺錢
                 if diff > 0:
                     # 算多賺的是幾％
-                    offset_percent = (ca_available_capital / diff) * 100
+                    offset_percent = (diff / ca_available_capital) * 100
                     tv_order_percent_of_capitial = tv_order_value - offset_percent
                 newOrderAmount = dict(percent=tv_order_percent_of_capitial * int(CA.get_leverage()))   # default to 1
-                CA.log("CA開倉比例% " + str(tv_order_percent_of_capitial * int(CA.get_leverage())) + " \n CA下單金額%" + str(tv_order_percent_of_capitial * int(CA.get_leverage())) +  " \n CA入場本金$: " + str(self.ca_total_capital)  + " \n CA可用資金$: " + str(ca_available_capital))
+                CA.log("CA開倉比例% " + str(tv_order_percent_of_capitial * int(CA.get_leverage())) + " \n CA下單金額%" + str(tv_order_percent_of_capitial * int(CA.get_leverage())) +  " \n CA入場本金$: " + str(newOrderAmount)  + " \n CA可用資金$: " + str(ca_available_capital))
             # 下固定金額
             elif tv_order_mode == "noCompoundAvailableBalanceNotional":
                 ca_order_captial = tv_order_value
@@ -140,6 +140,7 @@ class Strategy(StrategyBase):
 
             # CA 倉位是在對的方向
             action = "open_long" if tv_position > 0 else "open_short"
+            CA.log("newOrderAmount" + str(newOrderAmount))
             return CA.place_order(exchange, pair, action=action, **newOrderAmount)
         # 照比例關艙區
         else: 
