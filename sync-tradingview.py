@@ -11,8 +11,9 @@ class Strategy(StrategyBase):
 
     def on_tradingview_signal(self, signal, candles):
         exchange, pair, base, quote = CA.get_exchange_pair()
+        leverage = int(CA.get_leverage())
         log = signal.get('log')
-        CA.log('📩 TradingView log: ' + str(log))
+        CA.log('? TradingView log: ' + str(log))
 
         """
         "entryOrder mode": 每次開單的設定
@@ -104,6 +105,10 @@ class Strategy(StrategyBase):
                 notional = ca_order_captial * int(CA.get_leverage()) # default to 1
                 newOrderAmount = dict(notional = notional)   
                 CA.log( " \n CA下單金額$ " + str(notional) + " \n CA可用資金$: " + str(ca_available_capital))
+            # 下固定 contract
+            elif tv_order_mode == "FixedAssetTrade":
+                newOrderAmount = dict(amount = tv_order_value )   
+                # CA.log( " \n CA下單金額$ " + str(notional) + " \n CA可用資金$: " + str(ca_available_capital))
             # PPC  複利 加倉
             elif tv_order_mode == "totalBalancePercent":
                 ca_order_captial = self.ca_total_capital
@@ -180,7 +185,7 @@ class Strategy(StrategyBase):
         if order.status == CA.OrderStatus.FILLED:
             # 看CA的倉位已經用了多少%的本金去開了
             ca_position_percent_of_capital = (self.ca_total_capital - ca_available_capital) / self.ca_total_capital
-            CA.log("🎉 現在CA倉位數量: " + str(ca_position) + " 本金%: " + str(ca_position_percent_of_capital * 100 *  int(CA.get_leverage()))+ " \n CA入場本金$: " + str(self.ca_total_capital)  + " \n CA可用資金$: " + str(ca_available_capital))
+            CA.log("? 現在CA倉位數量: " + str(ca_position) + " 本金%: " + str(ca_position_percent_of_capital * 100 *  int(CA.get_leverage()))+ " \n CA入場本金$: " + str(self.ca_total_capital)  + " \n CA可用資金$: " + str(ca_available_capital))
             
       # 平倉時 設置新的開倉金
         if ca_position == 0:
