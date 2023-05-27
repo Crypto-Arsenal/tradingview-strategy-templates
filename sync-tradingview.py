@@ -108,7 +108,7 @@ class Strategy(StrategyBase):
             # 下固定 contract
             elif tv_order_mode == "FixedAssetTrade":
                 if tv_position * tv_prev_position < 0: # 代表倉位方向不一樣
-                    tv_order_value = tv_order_value - abs(ca_position) # 先關掉
+                    tv_order_value = tv_order_value - abs(tv_prev_position) # 先關掉
                 newOrderAmount = dict(amount = tv_order_value)           
                 # CA.log( " \n CA下單金額$ " + str(notional) + " \n CA可用資金$: " + str(ca_available_capital))
             # PPC  複利 加倉
