@@ -158,9 +158,9 @@ class Strategy(StrategyBase):
         if positionSide is None or positionSize is None:
             return None
         if positionSide ==  "long":
-            return abs(positionSize)
+            return abs(float(positionSize))
         elif positionSide == "short":
-            return abs(positionSize) * -1
+            return abs(float(positionSize)) * -1
         elif positionSide == "flat":
             return 0 # not sure
         return None
