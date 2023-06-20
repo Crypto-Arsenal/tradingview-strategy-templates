@@ -52,9 +52,10 @@ class Strategy(StrategyBase):
         TV_PREV_POSITION = self.get_position_from_size_and_side(position.get("prev_size"), position.get("prev_side"))
 
         # 檢查訊號正確性
-        if TV_ORDER_MODE is None or TV_POSITION is None:
-            return CA.log('⛔ Invalid signal, missing TV_ORDER_MODE or TV_POSITION')
+        if TV_ORDER_MODE is None or TV_POSITION is None or TV_ORDER_VALUE is None:
+            return CA.log('⛔ Invalid signal, missing TV_ORDER_MODE or TV_POSITION or TV_ORDER_VALUE')
 
+        TV_ORDER_VALUE = float(TV_ORDER_VALUE)
         CA_POSITION = self.get_ca_position()
         CA_QUOTE_BALANCE = CA.get_balance(exchange, quote)
         CA_AVILABLE_QUOTE = CA_QUOTE_BALANCE.available
@@ -67,9 +68,8 @@ class Strategy(StrategyBase):
         If reverse position or adding to position
         """
         if (abs(TV_POSITION) > abs(TV_PREV_POSITION) and TV_POSITION * TV_PREV_POSITION >= 0) or TV_POSITION * TV_PREV_POSITION < 0:
-            ca_order_captial = CA_AVILABLE_QUOTE
             newOrderArgs = None
-            
+
             # Percentage of balance with compounding: "Trade a percentage (entry value) of your balance, including profits. E.g., with 100U, a 10% trade uses 10U, and the next 10% trade uses 9U from the remaining 90U."
             if TV_ORDER_MODE == "Percentage of Balance with Compounding":
                 percent = TV_ORDER_VALUE * leverage
