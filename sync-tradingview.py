@@ -52,10 +52,12 @@ class Strategy(StrategyBase):
         TV_PREV_POSITION = self.get_position_from_size_and_side(position.get("prev_size"), position.get("prev_side"))
 
         # 檢查訊號正確性
-        if TV_ORDER_MODE is None or TV_POSITION is None or TV_ORDER_VALUE is None:
-            return CA.log('⛔ Invalid signal, missing TV_ORDER_MODE or TV_POSITION or TV_ORDER_VALUE')
-
+        if TV_ORDER_MODE is None or TV_POSITION is None or TV_ORDER_VALUE is None or TV_ORDER_SIZE is None:
+            return CA.log('⛔ Invalid signal, missing TV_ORDER_MODE or TV_POSITION or TV_ORDER_VALUE or TV_ORDER_SIZE')
+            
         TV_ORDER_VALUE = float(TV_ORDER_VALUE)
+        TV_ORDER_SIZE = float(TV_ORDER_SIZE)
+        
         CA_POSITION = self.get_ca_position()
         CA_QUOTE_BALANCE = CA.get_balance(exchange, quote)
         CA_AVILABLE_QUOTE = CA_QUOTE_BALANCE.available
