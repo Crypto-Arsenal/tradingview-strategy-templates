@@ -88,17 +88,19 @@ class Strategy(StrategyBase):
             # Fixed amount from available balance: "Trade a fixed quote amount  (entry value). E.g., an entry vaule of 100U opens a position worth 100U."
             elif TV_ORDER_MODE == "Fixed Quote Amount":
                 TV_ORDER_VALUE = min(TV_ORDER_VALUE, CA_AVILABLE_QUOTE)
-                notional = TV_ORDER_VALUE * leverage # default to 1
+                notional = TV_ORDER_VALUE * leverage 
                 newOrderArgs = dict(notional = notional)   
             # Strategy Base Amount: "Trade base asset amount based on TradingView Strategy's amount E.g., Follows the exact contract amount from TradingView."
             elif TV_ORDER_MODE == "Strategy Order Size":
                 # Will not use TV_ORDER_VALUE
                 if TV_POSITION * TV_PREV_POSITION < 0:
                     TV_ORDER_SIZE -= abs(TV_PREV_POSITION)
-                newOrderArgs = dict(amount = TV_ORDER_SIZE)
+                amount = TV_ORDER_SIZE * leverage
+                newOrderArgs = dict(amount = amount)
             # Fixed base asset amount: "Trade a fixed base asset amount  (entry value). E.g., an entry vaule of 1ETH opens a position worth 1ETH."
             elif TV_ORDER_MODE == "Fixed Base Amount":
-                newOrderArgs = dict(amount = TV_ORDER_VALUE)   
+                amount = TV_ORDER_VALUE * leverage
+                newOrderArgs = dict(amount = amount)   
             # Percentage of balance at no position: "When adding to a position, use a percentage (entry value) of your total balance when no position is open. E.g., with 100U (no position), entering 10% and another 20% uses 10U and 20U."
             elif TV_ORDER_MODE == "Percentage of Balance at No Position":
                 TV_ORDER_VALUE /= 100
