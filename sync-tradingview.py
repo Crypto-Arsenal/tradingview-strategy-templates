@@ -78,13 +78,9 @@ class Strategy(StrategyBase):
                 newOrderArgs = dict(percent=percent)   # default to 1
             
             # Percentage of initial balance only: "Trade a percentage  (entry value) of your initial balance, excluding profits. E.g., with 100U, even if it grows to 130U, a 10% trade uses 10U, based on the initial 100U."
-            elif TV_ORDER_MODE == "Percentage of Initial Balance Only":
-                profitQuote = CA_AVILABLE_QUOTE - self.CA_INITIAL_QUOTE
-                if profitQuote > 0:
-                    offset_percent = (diff / CA_AVILABLE_QUOTE) * 100
-                    TV_ORDER_VALUE -= offset_percent
-                percent = TV_ORDER_VALUE * leverage
-                newOrderArgs = dict(percent=percent) 
+            elif TV_ORDER_MODE == "Percentage of Initial Balance Only":            
+                notional = (TV_ORDER_VALUE  / 100) * self.CA_INITIAL_QUOTE * leverage
+                newOrderArgs = dict(notional=notional) 
             # Fixed amount from available balance: "Trade a fixed quote amount  (entry value). E.g., an entry vaule of 100U opens a position worth 100U."
             elif TV_ORDER_MODE == "Fixed Quote Amount":
                 TV_ORDER_VALUE = min(TV_ORDER_VALUE, CA_AVILABLE_QUOTE)
