@@ -79,8 +79,17 @@ class Strategy(StrategyBase):
             
             # Percentage of initial balance only: "Trade a percentage  (entry value) of your initial balance, excluding profits. E.g., with 100U, even if it grows to 130U, a 10% trade uses 10U, based on the initial 100U."
             elif TV_ORDER_MODE == "Percentage of Initial Balance Only":            
-                notional = (TV_ORDER_VALUE  / 100) * self.CA_INITIAL_QUOTE * leverage
-                newOrderArgs = dict(notional=notional) 
+                notional = (TV_ORDER_VALUE  / 100) * min(self.CA_INITIAL_QUOTE, CA_AVILABLE_QUOTE) * leverage
+                newOrderArgs = dict(notional=notional)
+            # Initial Balance Compound With Percentage of Profit: "Trade your initial balance + (entry value) Percentage of Profit. E.g., with available 100U, even if it grows to 200U, a 10% trade uses 110U, based on the initial 100U."
+            elif TV_ORDER_MODE == "Initial Balance Compound With Percentage of Profit":
+                profit = CA_AVILABLE_QUOTE - self.CA_INITIAL_QUOTE
+                notional = 0
+                if profit > 0:
+                    # Percentage of their profit
+                    notional = profit * (TV_ORDER_VALUE / 100)
+                notional += min(self.CA_INITIAL_QUOTE, CA_AVILABLE_QUOTE) * leverage
+                newOrderArgs = dict(notional=notional)
             # Fixed amount from available balance: "Trade a fixed quote amount  (entry value). E.g., an entry vaule of 100U opens a position worth 100U."
             elif TV_ORDER_MODE == "Fixed Quote Amount":
                 TV_ORDER_VALUE = min(TV_ORDER_VALUE, CA_AVILABLE_QUOTE)
@@ -88,7 +97,7 @@ class Strategy(StrategyBase):
                 newOrderArgs = dict(notional = notional)   
             # Strategy Base Amount: "Trade base asset amount based on TradingView Strategy's amount E.g., Follows the exact contract amount from TradingView."
             elif TV_ORDER_MODE == "Strategy Order Size":
-                # Will not use TV_ORDER_VALUE
+                # Will not use TV_ORDER_VALUE since order sizes are from TV
                 if TV_POSITION * TV_PREV_POSITION < 0:
                     TV_ORDER_SIZE -= abs(TV_PREV_POSITION)
                 amount = TV_ORDER_SIZE * leverage
