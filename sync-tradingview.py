@@ -7,6 +7,7 @@ class Strategy(StrategyBase):
         CA_QUOTE_BALANCE = CA.get_balance(exchange, quote)
         self.CA_INITIAL_QUOTE = CA_QUOTE_BALANCE.available
         self.CA_TOTAL_CAPITAL_AT_NO_POSITION = CA_QUOTE_BALANCE.available
+        self.on_order_state_change_callback = None
         CA.log('Total inital ' + str(quote) + ' quote amount: ' + str(self.CA_TOTAL_CAPITAL_AT_NO_POSITION))
 
     def trade_by_trade(self, signal, candles, exchange, pair, base, quote, leverage):
@@ -181,6 +182,8 @@ class Strategy(StrategyBase):
             # 看CA的倉位已經用了多少%的本金去開了
             ca_position_percent_of_capital = (self.CA_TOTAL_CAPITAL_AT_NO_POSITION - CA_AVILABLE_QUOTE) / self.CA_TOTAL_CAPITAL_AT_NO_POSITION
             CA.log("Position: " + str(CA_POSITION) + "\n Position %: " + str(ca_position_percent_of_capital * 100) + " \n Available Quote$: " + str(CA_AVILABLE_QUOTE) )
+            self.on_order_state_change_callback(CA_AVILABLE_QUOTE)
+            self.on_order_state_change_callback = None
             
       # 平倉時 設置新的開倉金
         if CA_POSITION == 0:
