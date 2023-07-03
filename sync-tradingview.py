@@ -72,18 +72,40 @@ class Strategy(StrategyBase):
         """
         if (abs(TV_POSITION) > abs(TV_PREV_POSITION) and TV_POSITION * TV_PREV_POSITION >= 0) or TV_POSITION * TV_PREV_POSITION < 0:
             newOrderArgs = None
+            action = "open_long" if TV_POSITION > 0 else "open_short"
+            isReverseToLong = TV_POSITION > 0 and CA_POSITION < 0
+            isReverseToShort = TV_POSITION < 0 and CA_POSITION > 0
 
             # Percentage of balance with compounding: "Trade a percentage (entry value) of your balance, including profits. E.g., with 100U, a 10% trade uses 10U, and the next 10% trade uses 9U from the remaining 90U."
             if TV_ORDER_MODE == "Percentage of Balance with Compounding":
                 percent = TV_ORDER_VALUE * leverage
                 newOrderArgs = dict(percent=percent)   # default to 1
-            
             # Percentage of initial balance only: "Trade a percentage  (entry value) of your initial balance, excluding profits. E.g., with 100U, even if it grows to 130U, a 10% trade uses 10U, based on the initial 100U."
             elif TV_ORDER_MODE == "Percentage of Initial Balance Only":            
                 notional = (TV_ORDER_VALUE  / 100) * min(self.CA_INITIAL_QUOTE, CA_AVILABLE_QUOTE) * leverage
                 newOrderArgs = dict(notional=notional)
             # Initial Balance Compound With Percentage of Profit: "Trade your initial balance + (entry value) Percentage of Profit. E.g., with available 100U, even if it grows to 200U, a 10% trade uses 110U, based on the initial 100U."
             elif TV_ORDER_MODE == "Initial Balance Compound With Percentage of Profit":
+                def InitialBalanceCompoundWithPercentageofProfit(post_state_change_available_quote):
+                    profit = post_state_change_available_quote - self.CA_INITIAL_QUOTE
+                    notional = 0
+                    if profit > 0:
+                        # Percentage of their profit
+                        notional = profit * (TV_ORDER_VALUE / 100)
+                    notional += min(self.CA_INITIAL_QUOTE, CA_AVILABLE_QUOTE) * leverage
+                    newOrderArgs = dict(notional=notional)                    
+                
+                if TV_POSITION * CA_POSITION < 0:
+                    action = 'open_long' if TV_POSITION > 0 else 'open_short'
+                    self.on_order_state_change_callback = InitialBalanceCompoundWithPercentageofProfit
+                    
+                if TV_POSITION > 0 and CA_POSITION < 0:
+                    CA.log("Close all short position then open long")
+                    return CA.place_order(exchange, pair, action='close_short', percent=100)
+                elif TV_POSITION < 0 and CA_POSITION > 0:
+                    CA.log("Close all long position then open short")
+                    return CA.place_order(exchange, pair, action='close_long', percent=100)
+                    
                 profit = CA_AVILABLE_QUOTE - self.CA_INITIAL_QUOTE
                 notional = 0
                 if profit > 0:
@@ -91,6 +113,7 @@ class Strategy(StrategyBase):
                     notional = profit * (TV_ORDER_VALUE / 100)
                 notional += min(self.CA_INITIAL_QUOTE, CA_AVILABLE_QUOTE) * leverage
                 newOrderArgs = dict(notional=notional)
+                
             # Fixed amount from available balance: "Trade a fixed quote amount  (entry value). E.g., an entry vaule of 100U opens a position worth 100U."
             elif TV_ORDER_MODE == "Fixed Quote Amount":
                 TV_ORDER_VALUE = min(TV_ORDER_VALUE, CA_AVILABLE_QUOTE)
@@ -140,8 +163,7 @@ class Strategy(StrategyBase):
                 return CA.place_order(exchange, pair, action='close_long', conditional_order_type='OTO', percent=100,
                                    child_conditional_orders=[{'action': 'open_short', **newOrderArgs}])
 
-            # CA 倉位是在對的方向
-            action = "open_long" if TV_POSITION > 0 else "open_short"
+            
             CA.log("New Order: " + str(newOrderArgs))
             return CA.place_order(exchange, pair, action=action, **newOrderArgs)
         # 照比例關艙區
